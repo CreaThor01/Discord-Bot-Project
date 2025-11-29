@@ -36,6 +36,7 @@ jupyter_client==8.6.3
 jupyter_core==5.9.1
 keras==3.12.0
 kiwisolver==1.4.9
+lavalink==5.9.0
 libclang==18.1.1
 Markdown==3.9
 markdown-it-py==4.0.0
