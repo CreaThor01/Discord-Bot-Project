@@ -1,35 +1,50 @@
 # Discord Bot
 
-This repository contains a Discord bot developed using Python (`discord.py`).  
-The bot features automated greetings, interactive commands, polls, and logging, designed for server engagement and moderation.
+This project is a Discord bot developed in Python (`discord.py`).  
+The bot enhances server experience with welcome messages, music playback, games, and interactive commands.
 
 ---
 
 ## Features
 
-- **Welcome System:** Sends an embed message when a new member joins the server.  
+- **Welcome System:** Sends an embed message when a new member joins.  
 - **Message Listener:** Responds to specific messages (e.g., `"merhaba"`).  
-- **Interactive Commands:**  
+- **Music System (Lavalink):**  
+  - `/join` – Connects the bot to a voice channel  
+  - `/play` – Plays a song from YouTube and adds it to the playlist  
+- **Game Commands:**  
   - `/gtn` – Guess-the-number mini-game  
-  - `/poll` – Creates a reaction-based poll  
-  - `/hello` – Sends a simple greeting  
-- **Logging:** Captures detailed bot activity in `discord.log`.  
-- **Secure Configuration:** Uses `.env` for sensitive data like bot token.  
+- **Interactive Commands:**  
+  - `/hello` – Sends a greeting  
+- **Logging:** Bot activity is saved in `discord.log`.  
+- **Secure Configuration:** `.env` file stores bot token and sensitive data.
 
 ---
 
-## Architecture
+## Requirements
 
-- **Bot Framework:** discord.py (Pycord)  
-- **Configuration:** `.env` environment file  
-- **Logging:** Python `logging` module  
-- **Command Handling:** Bot commands with `@bot.command` and `@bot.event`  
+- Python 3.10+  
+- `discord.py` (Pycord)  
+- `lavalink`  
+- `python-dotenv`
 
+You can install dependencies using `requirements.txt`:
+
+```bash
+pip install -r requirements.txt
+```
 ---
 
-## Installation
+## Clone the Repository
 
-### 1. Clone Repository
 ```bash
 git clone https://github.com/<CreaThor01>/<Discord-Bot-Project>.git
 cd <Discord-Bot-Project>
+```
+---
+
+## Create a .env File
+
+```ini
+TOKEN=your_bot_token_here
+```
