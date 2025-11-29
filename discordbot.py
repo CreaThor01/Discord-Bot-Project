@@ -29,10 +29,14 @@ bot = commands.Bot(command_prefix="/", intents=intents)
 class MusicCog(commands.Cog):
     def __init__(self, bot): 
         self.bot = bot
-        # Bot hazır olduğunda Lavalink'i başlatacağız
-        if not hasattr(bot, 'music'): 
+
+
+    # Lavalink'i bot hazır olduğunda başlatan listener
+    @commands.Cog.listener()
+    async def on_ready(self):
+        if not hasattr(self.bot, 'music'):
+            print("🎵 Lavalink düğümü başlatılıyor...")
             self.bot.music = lavalink.Client(self.bot.user.id)
-            # Lavalink Bağlantısı (IPv4 Zorlaması: 127.0.0.1)
             self.bot.music.add_node(
                 host="127.0.0.1", 
                 port=2333, 
@@ -42,6 +46,7 @@ class MusicCog(commands.Cog):
             )
             self.bot.add_listener(self.bot.music.voice_update_handler, "on_socket_response")
             self.bot.music.add_event_hook(self.track_hook)
+            print("✅ Lavalink bağlandı.")
 
     async def track_hook(self, event):
         if isinstance(event, lavalink.events.QueueEndEvent):
@@ -53,11 +58,14 @@ class MusicCog(commands.Cog):
         await ws.voice_state(str(guild_id), channel_id)
 
     # KOMUT: /join
-    @discord.slash_command(name="join", description="Ses kanalına katılır",guild_ids=[1221034983225954344])
+    @discord.slash_command(name="join", description="Ses kanalına katılır", guild_ids=[1221034983225954344])
     async def join(self, ctx):
         member = ctx.author
         if member is not None and member.voice is not None:
             vc = member.voice.channel
+            if not hasattr(self.bot, 'music'):
+                 return await ctx.respond("❌ Müzik sistemi henüz hazır değil, lütfen biraz bekle.")
+
             player = self.bot.music.player_manager.create(ctx.guild.id)
             
             if not player.is_connected:
@@ -71,23 +79,25 @@ class MusicCog(commands.Cog):
     # KOMUT: /play
     @discord.slash_command(name="play", description="Müzik çalar", guild_ids=[1221034983225954344])
     async def play(self, ctx, query: str):
-        # İşlem uzun sürebilir diye defer atıyoruz
         await ctx.defer()
         
         try:
+            if not hasattr(self.bot, 'music'):
+                 return await ctx.followup.send("❌ Müzik sistemi henüz hazır değil.")
+
             player = self.bot.music.player_manager.get(ctx.guild.id)
-            # Eğer bot seste değilse otomatik bağlanmayı dene
+            
             if not player.is_connected:
                 if ctx.author.voice:
                     await self.connect_to(ctx.guild.id, str(ctx.author.voice.channel.id))
                 else:
-                    return await ctx.respond("❌ Bir ses kanalında değilsin.")
+                    return await ctx.followup.send("❌ Bir ses kanalında değilsin.")
 
-            query = f"ytsearch:{query}"
+            query = f"ytmsearch:{query}"
             results = await player.node.get_tracks(query)
             
             if not results or not results['tracks']:
-                return await ctx.respond("Sonuç bulunamadı.")
+                return await ctx.followup.send("Sonuç bulunamadı.")
 
             tracks = results["tracks"][0:10]
             i = 0
@@ -97,17 +107,17 @@ class MusicCog(commands.Cog):
                 query_result = query_result + f"{i}) {track['info']['title']} - {track['info']['uri']}\n"
             
             embed = Embed(description=query_result)
-            await ctx.respond(embed=embed)
+            await ctx.followup.send(embed=embed)
             
             def check(m):
                 return m.author.id == ctx.author.id and m.channel.id == ctx.channel.id
             
             try:
+                # wait_for 'message' bot objesi üzerinden çağrılmalı
                 response = await self.bot.wait_for("message", check=check, timeout=30.0)
             except:
                 return await ctx.followup.send("Süre doldu, seçim yapmadın.")
 
-            # Sayı seçimi hatası düzeltildi
             selection = int(response.content) - 1
             if 0 <= selection < len(tracks):
                 track = tracks[selection]
@@ -122,7 +132,8 @@ class MusicCog(commands.Cog):
 
         except Exception as error:
             print(f"Hata: {error}")
-            await ctx.followup.send("Bir hata oluştu.")
+            # Hata durumunda boş yanıt dönmemesi için:
+            await ctx.followup.send(f"Bir hata oluştu: {error}")
 
 # ---------------------------------------------------------
 # BOT EVENTLERİ
@@ -131,15 +142,8 @@ class MusicCog(commands.Cog):
 @bot.event
 async def on_ready():
     print(f"✅ Giriş yapıldı: {bot.user.name}")
-    
-    # Music Cog'unu burada yüklüyoruz
-    bot.add_cog(MusicCog(bot))
-    print("🎹 Müzik sistemi yüklendi.")
+    print(f"🆔 ID: {bot.user.id}")
 
-    # Komutları senkronize et (Bu işlem biraz zaman alabilir ama garanti olur)
-    # Global senkronizasyon için:
-    # await bot.sync_commands() 
-    print("Komutlar hazir!")
 
 @bot.event
 async def on_member_join(member):
@@ -152,17 +156,14 @@ async def on_member_join(member):
         embed.set_image(url="https://ares.shiftdelete.net/2021/08/arkadaslarinizla-izleyebileceginiz-en-iyi-komedi-filmleri-deadpool.jpg")
         await channel.send(embed=embed)
 
-# Diğer komutlar (gtn, poll, hello)
-
-@bot.command()
-async def gtn(ctx):
-    await ctx.send('Guess a number between 1 and 10.')
-    # ... oyun mantığı ...
-
-@bot.slash_command(name="hello", description="Selam verir",guild_ids=[1221034983225954344])
+@bot.slash_command(name="hello", description="Selam verir", guild_ids=[1221034983225954344])
 async def hello(ctx):
     await ctx.respond("hello")
 
-# Botu çalıştır
+# ---------------------------------------------------------
+# BOTU BAŞLATMA
+# ---------------------------------------------------------
+
 if __name__ == "__main__":
+    bot.add_cog(MusicCog(bot))
     bot.run(token)
