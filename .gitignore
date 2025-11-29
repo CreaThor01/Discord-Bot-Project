@@ -11,3 +11,6 @@ discord.log
 # IDE files
 .vscode/
 .idea/
+
+#Lavalink
+Lavalink.jar
